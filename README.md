@@ -1,12 +1,12 @@
-# Portal_Cartografico_Interactivo_Braganza
-Visualizar e analisar dados do município de Bragança, Portugal
+# Portal_Cartografico_Interactivo_Portugal
+Visualizar e analisar dados do  Portugal
 
 Mapa Interativo de Bragança
 
-Olá! Este projeto foi desenvolvido para visualizar e analisar dados do município de Bragança, Portugal. A ideia principal foi criar uma ferramenta funcional que facilite a compreensão de indicadores territoriais através de mapas dinâmicos.
+Olá! Este projeto foi desenvolvido para visualizar e analisar dados do  Portugal. A ideia principal foi criar uma ferramenta funcional que facilite a compreensão de indicadores territoriais através de mapas dinâmicos.
 
 🌟 O que o projeto oferece?
-O diferencial desta aplicação é a capacidade de processar dados em tempo real. Em vez de uma visualização estática, o utilizador pode alternar entre diferentes métodos de classificação, como o algoritmo de Jenks (Quebras Naturais). Isto garante que a divisão das cores no mapa siga uma lógica estatística real, destacando com precisão as variações entre as freguesias.
+O diferencial desta aplicação é a capacidade de processar dados em tempo real. Em vez de uma visualização estática, o utilizador pode alternar entre diferentes métodos de classificação, como o algoritmo de Jenks (Quebras Naturais). Isto garante que a divisão das cores no mapa siga uma lógica estatística real, destacando com precisão.
 
 🛠️ Implementação Técnica
 Leaflet.js: Utilizado para a renderização eficiente do mapa e das camadas vetoriais.
