@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const vals = allFeatures.map(getTaxa).sort((a, b) => b - a);
         const rank = vals.indexOf(taxa) + 1;
-        if (detailRank) detailRank.textContent = `#${rank} de ${vals.length} freguesias`;
+        if (detailRank) detailRank.textContent = `#${rank} de ${vals.length} distritos`;
 
         if (labelSelect) labelSelect.value = nome;
 
