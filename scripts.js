@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).setView([39.694, -8.130], 7);
 
     // Añadimos la capa base por defecto de forma segura
-    if (baseLayers.streets) baseLayers.streets.addTo(map);
+    if (baseLayers.dark) baseLayers.dark.addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
