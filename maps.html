@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIG Portugal| Pro</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="map-overlay-header">
+        <div class="header-content">
+            <img src="./maps/img.png" alt="Galo" class="map-logo">
+            <h1 id="mainTitle">República Portuguesa</h1>
+        </div>
+    </header>
+
+    <aside class="controls">
+        <h3 class="panel-title">CONFIGURAÇÕES</h3>
+
+        <button type="button" id="btnCargarGeoJSON" class="map-button">CARREGAR DADOS</button>
+        <button type="button" id="btnReset" class="map-button secondary">LIMPAR SELEÇÃO</button>
+
+        <div class="separator"></div>
+
+        <label>MAPA BASE
+                <select id="baseMapSelect">
+                    <option value="satellite">Satellit (Esri)</option>
+                    <option value="streets">OpenStreetMap</option>
+                    <option value="dark">Carto Voyager</option>
+                </select>
+            </select>
+        </label>
+
+        <label>MÉTODO ESTATÍSTICO
+            <select id="classificationSelect">
+                <option value="jenks" selected>Quebras Naturais (Jenks)</option>
+                <option value="equal">Intervalos Iguais</option>
+                <option value="quartiles">Quartis (25% cada)</option>
+            </select>
+        </label>
+
+        <label>GAMA DE CORES
+            <select id="paletteSelect">
+                <option value="reds">Vermelhos</option>
+                <option value="purples">Violetas</option>
+                <option value="greens">Verdes</option>
+                <option value="yellows">Amarelos</option>
+                <option value="blues" selected>Azuis</option>
+                <option value="oranges">Laranjas</option>
+            </select>
+        </label>
+
+        <label>SELECIONAR DISTRITOS 
+            <select id="labelSelect">
+                <option value="">Aguardando dados...</option>
+            </select>
+        </label>
+
+        <div id="infoBox" class="info-card">
+            <p id="detailNome"><b>Nome:</b> --</p>
+            <p id="detailTaxa"><b>Taxa:</b> --</p>
+            <p id="detailRank" class="rank-line"></p>
+        </div>
+
+        <div id="statsBox" class="stats-card">
+            <div class="stats-title">ESTATÍSTICAS GERAIS</div>
+            <div class="stats-grid">
+                <div><span class="stat-label">Mín</span><span id="statMin" class="stat-val">--</span></div>
+                <div><span class="stat-label">Máx</span><span id="statMax" class="stat-val">--</span></div>
+                <div><span class="stat-label">Média</span><span id="statMean" class="stat-val">--</span></div>
+                <div><span class="stat-label">Mediana</span><span id="statMedian" class="stat-val">--</span></div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="side-images">
+        <div class="marco-fijo">
+            <img src="./maps/imgpt.png" alt="Escudo">
+        </div>
+        <div class="marco-fijo">
+            <img src="./maps/logo.png" alt="Contorno">
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="scripts.js"></script>
+</body>
+</html>

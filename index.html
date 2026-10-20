@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor Geográfico | Portugal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===== VARIÁVEIS DE COR PORTUGAL ===== */
+        :root {
+            --pt-green: #006600;
+            --pt-green-dark: #003d00;
+            --pt-green-light: #00a800;
+            --pt-red: #FF0000;
+            --pt-red-dark: #b30000;
+            --pt-red-light: #ff4d4d;
+            --pt-yellow: #FFD700;
+            --pt-white: #FFFFFF;
+            --pt-cream: #f4f1e8;
+            --pt-dark: #1a1a1a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            min-height: 100vh;
+            width: 100%;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            background: var(--pt-cream);
+            position: relative;
+            cursor: none;
+        }
+
+        /* ===== CURSOR PERSONALIZADO ===== */
+        .cursor {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            background: var(--pt-red);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.15s ease, width 0.3s ease, height 0.3s ease;
+            mix-blend-mode: difference;
+        }
+        .cursor-ring {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--pt-red);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transition: transform 0.25s ease, width 0.3s ease, height 0.3s ease;
+            opacity: 0.6;
+        }
+        .cursor.hover { width: 25px; height: 25px; background: var(--pt-green); }
+        .cursor-ring.hover { width: 70px; height: 70px; border-color: var(--pt-green); }
+
+        /* ===== PARTÍCULAS CANVAS ===== */
+        #particles {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== FUNDO DE DUAS CORES: VERDE E VERMELHO ===== */
+        .bg-diagonal {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg,
+                var(--pt-green-dark) 0%,
+                var(--pt-green) 40%,
+                var(--pt-red) 60%,
+                var(--pt-red-dark) 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 20s ease infinite;
+            z-index: 0;
+        }
+        @keyframes gradientShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* ===== ESCUDO DE PORTUGAL DE FUNDO ===== */
+        .pt-shield-bg {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70vmin;
+            height: 70vmin;
+            opacity: 0.08;
+            z-index: 1;
+            pointer-events: none;
+            animation: rotateShield 90s linear infinite;
+        }
+        @keyframes rotateShield {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to   { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* ===== ESFERAS FLUTUANTES ===== */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 1;
+            pointer-events: none;
+        }
+        .orb-1 { width: 400px; height: 400px; background: var(--pt-yellow); top: -100px; left: -100px; opacity: 0.2; animation: float1 12s ease-in-out infinite; }
+        .orb-2 { width: 450px; height: 450px; background: var(--pt-green); bottom: -150px; right: -120px; opacity: 0.4; animation: float2 15s ease-in-out infinite; }
+        .orb-3 { width: 300px; height: 300px; background: var(--pt-red-light); top: 40%; left: 45%; opacity: 0.2; animation: float3 10s ease-in-out infinite; }
+
+        @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(50px,40px)} }
+        @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-60px,-30px)} }
+        @keyframes float3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,50px) scale(1.2)} }
+
+        /* ===== HEADER ===== */
+        .header {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            padding: 25px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            animation: fadeDown 1s ease-out;
+            transition: background 0.3s ease, padding 0.3s ease;
+        }
+        .header.scrolled {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(15px);
+            padding: 15px 50px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 15px rgba(0,0,0,0.3));
+            transition: transform 0.3s ease;
+        }
+        .logo:hover { transform: scale(1.1) rotate(-5deg); }
+
+        .nav-menu {
+            display: flex;
+            gap: 35px;
+            list-style: none;
+        }
+        .nav-menu a {
+            color: var(--pt-white);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            position: relative;
+            padding: 5px 0;
+            transition: color 0.3s ease;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .header.scrolled .nav-menu a {
+            color: var(--pt-dark);
+            text-shadow: none;
+        }
+        .nav-menu a::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--pt-yellow);
+            transition: width 0.3s ease;
+        }
+        .nav-menu a:hover { color: var(--pt-yellow); }
+        .header.scrolled .nav-menu a:hover { color: var(--pt-red); }
+        .nav-menu a:hover::after { width: 100%; }
+
+        /* ===== HERO SECTION ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 50px 80px;
+            position: relative;
+            z-index: 5;
+        }
+
+        .hero-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        /* Coluna esquerda: texto */
+        .hero-text {
+            animation: fadeUp 1s ease-out 0.2s both;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--pt-yellow);
+            color: var(--pt-green-dark);
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 20px rgba(255,215,0,0.4);
+        }
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--pt-red);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity: 1; transform: scale(1); }
+            50%     { opacity: 0.5; transform: scale(1.3); }
+        }
+
+        .title {
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 900;
+            color: var(--pt-white);
+            letter-spacing: -2px;
+            line-height: 1;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            text-shadow: 
+                0 0 30px rgba(255,215,0,0.3),
+                0 5px 25px rgba(0,0,0,0.4);
+        }
+        .title .accent {
+            color: var(--pt-yellow);
+            position: relative;
+            display: inline-block;
+        }
+        .title .accent::after {
+            content: '';
+            position: absolute;
+            bottom: 5px; left: 0;
+            width: 100%;
+            height: 10px;
+            background: var(--pt-yellow);
+            opacity: 0.25;
+            z-index: -1;
+        }
+
+        .subtitle {
+            font-size: clamp(0.95rem, 1.3vw, 1.15rem);
+            color: rgba(255,255,255,0.92);
+            font-weight: 400;
+            line-height: 1.7;
+            margin-bottom: 40px;
+            max-width: 500px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Botões */
+        .buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 50px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 38px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-decoration: none;
+            border-radius: 50px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--pt-yellow);
+            color: var(--pt-green-dark);
+            box-shadow: 0 10px 30px rgba(255,215,0,0.4);
+        }
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            transition: left 0.6s ease;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover {
+            transform: translateY(-4px);
+            background: var(--pt-white);
+            color: var(--pt-red);
+            box-shadow: 0 20px 40px rgba(255,255,255,0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--pt-white);
+            border: 2px solid var(--pt-white);
+        }
+        .btn-secondary:hover {
+            background: var(--pt-white);
+            color: var(--pt-red);
+            transform: translateY(-4px);
+        }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+        .btn:hover svg { transform: translateX(5px); }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 40px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(255,255,255,0.2);
+        }
+        .stat-item h3 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--pt-yellow);
+            margin-bottom: 5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .stat-item p {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.85);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        /* Coluna direita: card visual */
+        .hero-visual {
+            position: relative;
+            animation: fadeUp 1s ease-out 0.5s both;
+        }
+
+        .visual-card {
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 35px;
+            box-shadow:
+                0 30px 60px rgba(0,0,0,0.3),
+                0 0 0 1px rgba(255,255,255,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .visual-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 6px;
+            background: linear-gradient(90deg, var(--pt-green), var(--pt-yellow), var(--pt-red));
+            background-size: 200% auto;
+            animation: shine 3s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--pt-dark);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--pt-green);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--pt-red);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Mapa simulado */
+        .mini-map {
+            width: 100%;
+            height: 220px;
+            background:
+                linear-gradient(rgba(0,102,0,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,102,0,0.06) 1px, transparent 1px),
+                linear-gradient(135deg, #f8f8f8, #e8e8e8);
+            background-size: 20px 20px, 20px 20px, 100% 100%;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 25px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .map-pin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--pt-red);
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 5px 15px rgba(255,0,0,0.4);
+            animation: pinDrop 2s ease-in-out infinite;
+        }
+        .map-pin::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px; height: 6px;
+            background: var(--pt-white);
+            border-radius: 50%;
+        }
+        .pin-1 { top: 30%; left: 25%; animation-delay: 0s; }
+        .pin-2 { top: 55%; left: 60%; animation-delay: 0.5s; }
+        .pin-3 { top: 20%; left: 75%; animation-delay: 1s; }
+        .pin-4 { top: 70%; left: 40%; animation-delay: 1.5s; }
+
+        @keyframes pinDrop {
+            0%,100% { transform: rotate(-45deg) translateY(0); }
+            50%     { transform: rotate(-45deg) translateY(-10px); }
+        }
+
+        /* Linhas de informação */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            font-size: 0.85rem;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label {
+            color: #888;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.7rem;
+        }
+        .info-value {
+            color: var(--pt-dark);
+            font-weight: 800;
+            font-size: 0.95rem;
+        }
+        .info-value.green { color: var(--pt-green); }
+
+        /* Relógio flutuante */
+        .clock-badge {
+            position: absolute;
+            top: -20px; right: -20px;
+            background: var(--pt-dark);
+            color: var(--pt-white);
+            padding: 15px 22px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            z-index: 2;
+        }
+        .clock-badge small {
+            display: block;
+            font-size: 0.6rem;
+            color: var(--pt-yellow);
+            letter-spacing: 2px;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+
+        /* ===== SECÇÃO FEATURES ===== */
+        .features {
+            padding: 100px 50px;
+            background: var(--pt-cream);
+            position: relative;
+            z-index: 5;
+        }
+        .section-header {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto 60px;
+        }
+        .section-tag {
+            color: var(--pt-red);
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+        .section-title {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 900;
+            color: var(--pt-dark);
+            letter-spacing: -1px;
+            margin-bottom: 15px;
+        }
+        .section-desc {
+            color: #666;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--pt-white);
+            border: 2px solid rgba(0,0,0,0.06);
+            border-radius: 25px;
+            padding: 40px 30px;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 0; height: 4px;
+            background: linear-gradient(90deg, var(--pt-green), var(--pt-red));
+            transition: width 0.4s ease;
+        }
+        .feature-card:hover::before { width: 100%; }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0,102,0,0.15);
+            border-color: rgba(0,102,0,0.2);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--pt-green), var(--pt-green-light));
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(0,102,0,0.3);
+            transition: transform 0.4s ease, background 0.4s ease;
+        }
+        .feature-card:nth-child(even) .feature-icon {
+            background: linear-gradient(135deg, var(--pt-red), var(--pt-red-light));
+            box-shadow: 0 10px 25px rgba(255,0,0,0.3);
+        }
+        .feature-card:hover .feature-icon {
+            transform: rotate(-8deg) scale(1.1);
+        }
+        .feature-icon svg {
+            width: 30px;
+            height: 30px;
+            color: var(--pt-white);
+        }
+
+        .feature-title {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--pt-dark);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .feature-desc {
+            color: #777;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--pt-dark);
+            color: var(--pt-white);
+            padding: 40px 50px;
+            text-align: center;
+            position: relative;
+            z-index: 5;
+            border-top: 4px solid var(--pt-green);
+        }
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .footer-logo {
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+        .footer-logo span { color: var(--pt-yellow); }
+        .footer-text {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+        .footer-text strong { color: var(--pt-yellow); }
+
+        /* ===== SCROLL INDICATOR ===== */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: bounce 2s infinite;
+        }
+        .scroll-indicator::after {
+            content: '';
+            width: 2px;
+            height: 30px;
+            background: linear-gradient(to bottom, var(--pt-yellow), transparent);
+        }
+        @keyframes bounce {
+            0%,100% { transform: translateX(-50%) translateY(0); }
+            50%     { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 968px) {
+            .hero-container { grid-template-columns: 1fr; gap: 50px; }
+            .hero-visual { order: -1; }
+            .nav-menu { display: none; }
+            .header { padding: 20px 25px; }
+            .hero { padding: 100px 25px 60px; }
+            .features { padding: 60px 25px; }
+            .footer { padding: 30px 25px; }
+            .stats { gap: 25px; }
+            .stat-item h3 { font-size: 1.4rem; }
+            .clock-badge { top: 10px; right: 10px; padding: 10px 16px; font-size: 0.9rem; }
+            .cursor, .cursor-ring { display: none; }
+            body { cursor: auto; }
+        }
+
+        @media (max-width: 500px) {
+            .title { font-size: 2.2rem; }
+            .buttons { flex-direction: column; }
+            .btn { width: 100%; justify-content: center; }
+            .stats { flex-wrap: wrap; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cursor personalizado -->
+    <div class="cursor"></div>
+    <div class="cursor-ring"></div>
+
+    <!-- Canvas de partículas -->
+    <canvas id="particles"></canvas>
+
+    <!-- Fundo diagonal verde-vermelho -->
+    <div class="bg-diagonal"></div>
+
+    <!-- Escudo de Portugal de fundo (SVG) -->
+<!-- Escudo de Portugal de fundo (PNG transparente) -->
+<img src="./maps/img.png" class="pt-shield-bg" alt="Escudo de Portugal">
+        <!-- Esferas flutuantes -->
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="logo-container">
+            <img src="./maps/logo.png" alt="Logo de Portugal" class="logo">
+        </div>
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="#home">Início</a></li>
+                <li><a href="#features">Recursos</a></li>
+                <li><a href="mapuy.html" target="_blank">Mapa</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero" id="home">
+        <div class="hero-container">
+            <!-- Texto -->
+            <div class="hero-text">
+                <div class="badge">
+                    <span class="badge-dot"></span>
+                    Dados Geográficos · Portugal
+                </div>
+                <h1 class="title">
+                    Visor<br>
+                    <span class="accent">Geográfico</span>
+                </h1>
+                <p class="subtitle">
+                    Explore Portugal através de mapas interativos.
+                    Dados precisos, visualização em tempo real e
+                    tecnologia SIG moderna para a sua análise.
+                </p>
+
+                <div class="buttons">
+                    <a href="maps.html" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                        Abrir Mapa
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                    </a>
+                    <a href="#features" class="btn btn-secondary">
+                        Saber Mais
+                    </a>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <h3>18</h3>
+                        <p>Distritos</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>3D</h3>
+                        <p>Visualização</p>
+                    </div>
+                    <div class="stat-item">
+                        <h3>24/7</h3>
+                        <p>Disponível</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual -->
+            <div class="hero-visual">
+                <div class="clock-badge">
+                    <small>Hora local</small>
+                    <span id="clock">00:00:00</span>
+                </div>
+                <div class="visual-card">
+                    <div class="card-header">
+                        <div class="card-title">Vista do Mapa</div>
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            Ao Vivo
+                        </div>
+                    </div>
+
+                    <div class="mini-map">
+                        <div class="map-pin pin-1"></div>
+                        <div class="map-pin pin-2"></div>
+                        <div class="map-pin pin-3"></div>
+                        <div class="map-pin pin-4"></div>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Latitude</span>
+                        <span class="info-value">38.7223° N</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Longitude</span>
+                        <span class="info-value">-9.1393° W</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Estado</span>
+                        <span class="info-value green">● Ativo</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="scroll-indicator">Deslizar</div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <div class="section-tag">Recursos</div>
+            <h2 class="section-title">Tudo o que precisa</h2>
+            <p class="section-desc">
+                Tecnologia SIG moderna para análises geográficas precisas
+                e visualizações interativas.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                </div>
+                <h3 class="feature-title">Mapas Interativos</h3>
+                <p class="feature-desc">
+                    Faça zoom, arraste e explore mapas detalhados de Portugal em tempo real.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                    </svg>
+                </div>
+                <h3 class="feature-title">Base de Dados</h3>
+                <p class="feature-desc">
+                    Acesso a extensos conjuntos de dados geográficos e informações precisas.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <h3 class="feature-title">Análise em Tempo Real</h3>
+                <p class="feature-desc">
+                    Processamento rápido e visualização dos seus dados geográficos.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3 class="feature-title">Seguro e Fiável</h3>
+                <p class="feature-desc">
+                    Máxima segurança de dados e precisão portuguesa em cada detalhe.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contacto">
+        <div class="footer-content">
+            <div class="footer-logo">VISOR<span>GEO</span></div>
+            <div class="footer-text">
+                Projeto <strong>GIS</strong> · Girotto 2026 · Portugal
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ===== CURSOR PERSONALIZADO =====
+        const cursor = document.querySelector('.cursor');
+        const cursorRing = document.querySelector('.cursor-ring');
+        let mouseX = 0, mouseY = 0;
+        let ringX = 0, ringY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            cursor.style.left = mouseX + 'px';
+            cursor.style.top = mouseY + 'px';
+        });
+
+        function animateRing() {
+            ringX += (mouseX - ringX) * 0.15;
+            ringY += (mouseY - ringY) * 0.15;
+            cursorRing.style.left = ringX + 'px';
+            cursorRing.style.top = ringY + 'px';
+            requestAnimationFrame(animateRing);
+        }
+        animateRing();
+
+        document.querySelectorAll('a, button, .feature-card').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor.classList.add('hover');
+                cursorRing.classList.add('hover');
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor.classList.remove('hover');
+                cursorRing.classList.remove('hover');
+            });
+        });
+
+        // ===== RELÓGIO EM TEMPO REAL (hora de Lisboa) =====
+        function updateClock() {
+            const now = new Date();
+            const ptTime = now.toLocaleTimeString('pt-PT', {
+                timeZone: 'Europe/Lisbon',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            document.getElementById('clock').textContent = ptTime;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ===== HEADER SCROLL EFFECT =====
+        const header = document.getElementById('header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // ===== PARTÍCULAS =====
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let canvasWidth, canvasHeight;
+
+        function resizeCanvas() {
+            canvasWidth = canvas.width = window.innerWidth;
+            canvasHeight = canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvasWidth;
+                this.y = Math.random() * canvasHeight;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.speedY = (Math.random() - 0.5) * 0.4;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                // Mistura de cores: verde, vermelho e amarelo
+                const colors = ['0,102,0', '255,0,0', '255,215,0'];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvasWidth) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvasHeight) this.speedY *= -1;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${this.color},${this.opacity})`;
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const count = Math.min(80, Math.floor(window.innerWidth / 15));
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle());
+            }
+        }
+        initParticles();
+
+        function connectParticles() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(255,215,0,${0.1 * (1 - distance / 120)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            connectParticles();
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ===== PARALLAX SUAVE NAS ORBS =====
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+            document.querySelector('.orb-1').style.transform = `translate(${x}px, ${y}px)`;
+            document.querySelector('.orb-2').style.transform = `translate(${-x}px, ${-y}px)`;
+        });
+
+        // ===== SCROLL REVEAL =====
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card').forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(40px)';
+            card.style.transition = `all 0.6s ease ${index * 0.1}s`;
+            observer.observe(card);
+        });
+    </script>
+</body>
+</html>
